@@ -57,8 +57,7 @@ export default function VerifyEmail() {
     setError("");
     setSuccess("");
 
-    const cleanEmail =
-      email.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail) {
       setError("Please enter your email");
@@ -72,22 +71,55 @@ export default function VerifyEmail() {
         email: cleanEmail,
       });
 
-      setSuccess(
-        "OTP sent to your email!"
-      );
+      setSuccess("OTP sent to your email!");
 
       setEmail(cleanEmail);
       setStep(2);
       setCountdown(60);
       setOtp("");
     } catch (err) {
-      setError(
-        err.message || "Failed to send OTP"
-      );
+      setError(err.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
   };
+
+  // ======================================================
+  // ========== AUTO SEND OTP AFTER SIGNUP ===============
+  // ======================================================
+
+  useEffect(() => {
+    if (location.state?.email) {
+      const cleanEmail =
+        location.state.email.trim().toLowerCase();
+
+      setEmail(cleanEmail);
+
+      const sendInitialOtp = async () => {
+        setError("");
+        setSuccess("");
+        setLoading(true);
+
+        try {
+          await api.post("/otp/send", {
+            email: cleanEmail,
+          });
+
+          setSuccess("OTP sent to your email!");
+          setCountdown(60);
+          setOtp("");
+        } catch (err) {
+          setError(
+            err.message || "Failed to send OTP"
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      sendInitialOtp();
+    }
+  }, [location.state?.email]);
 
   // ======================================================
   // ==================== VERIFY OTP ======================
@@ -99,16 +131,11 @@ export default function VerifyEmail() {
     setError("");
     setSuccess("");
 
-    const cleanEmail =
-      email.trim().toLowerCase();
-
-    const cleanOtp =
-      otp.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
 
     if (!cleanOtp || cleanOtp.length !== 6) {
-      setError(
-        "Please enter the 6-digit OTP"
-      );
+      setError("Please enter the 6-digit OTP");
       return;
     }
 
@@ -128,9 +155,7 @@ export default function VerifyEmail() {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(
-        err.message || "Invalid OTP"
-      );
+      setError(err.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -163,7 +188,6 @@ export default function VerifyEmail() {
 
       {step === 1 ? (
         <div className="space-y-4">
-
           <Input
             label="Email Address"
             type="email"
@@ -184,14 +208,12 @@ export default function VerifyEmail() {
           >
             Send OTP
           </Button>
-
         </div>
       ) : (
         <form
           onSubmit={verifyOtp}
           className="space-y-4"
         >
-
           <div className="text-center mb-2">
             <p className="text-sm text-slate-400">
               OTP sent to{" "}
@@ -207,10 +229,9 @@ export default function VerifyEmail() {
             icon={KeyRound}
             value={otp}
             onChange={(e) => {
-              const value =
-                e.target.value
-                  .replace(/\D/g, "")
-                  .slice(0, 6);
+              const value = e.target.value
+                .replace(/\D/g, "")
+                .slice(0, 6);
 
               setOtp(value);
               setError("");
@@ -230,7 +251,6 @@ export default function VerifyEmail() {
           </Button>
 
           <div className="flex items-center justify-between text-sm">
-
             <button
               type="button"
               onClick={() => {
@@ -247,30 +267,24 @@ export default function VerifyEmail() {
             <button
               type="button"
               onClick={sendOtp}
-              disabled={
-                countdown > 0 || loading
-              }
+              disabled={countdown > 0 || loading}
               className="text-primary-400 hover:text-primary-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
               {countdown > 0
                 ? `Resend in ${countdown}s`
                 : "Resend OTP"}
             </button>
-
           </div>
-
         </form>
       )}
 
       <p className="text-center text-sm text-slate-400 mt-6">
-
         <Link
           to="/login"
           className="text-primary-400 hover:text-primary-300 font-medium"
         >
           ← Back to Login
         </Link>
-
       </p>
     </AuthLayout>
   );
