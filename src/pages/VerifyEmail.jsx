@@ -1,82 +1,169 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Mail, KeyRound, ArrowLeft } from 'lucide-react';
-import AuthLayout from '../components/AuthLayout';
-import Input from '../components/Input';
-import Button from '../components/Button';
-import Alert from '../components/Alert';
-import api from '../api/axios';
+import { useState, useEffect } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import {
+  Mail,
+  KeyRound,
+  ArrowLeft,
+} from "lucide-react";
+
+import AuthLayout from "../components/AuthLayout";
+import Input from "../components/Input";
+import Button from "../components/Button";
+import Alert from "../components/Alert";
+import api from "../api/axios";
 
 export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(location.state?.email || '');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState(location.state?.email ? 2 : 1); // 1=email, 2=otp
+
+  const [email, setEmail] = useState(
+    location.state?.email || ""
+  );
+
+  const [otp, setOtp] = useState("");
+
+  const [step, setStep] = useState(
+    location.state?.email ? 2 : 1
+  );
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [countdown, setCountdown] = useState(0);
+
+  // ======================================================
+  // ==================== COUNTDOWN =======================
+  // ======================================================
 
   useEffect(() => {
     if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(t);
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [countdown]);
 
+  // ======================================================
+  // ==================== SEND OTP ========================
+  // ======================================================
+
   const sendOtp = async () => {
-    setError('');
-    setSuccess('');
-    if (!email.trim()) {
-      setError('Please enter your email');
+    setError("");
+    setSuccess("");
+
+    const cleanEmail =
+      email.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      setError("Please enter your email");
       return;
     }
+
     setLoading(true);
+
     try {
-      await api.post('/otp/send', { email: email.trim().toLowerCase() });
-      setSuccess('OTP sent to your email!');
+      await api.post("/otp/send", {
+        email: cleanEmail,
+      });
+
+      setSuccess(
+        "OTP sent to your email!"
+      );
+
+      setEmail(cleanEmail);
       setStep(2);
       setCountdown(60);
+      setOtp("");
     } catch (err) {
-      setError(err.message);
+      setError(
+        err.message || "Failed to send OTP"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // ======================================================
+  // ==================== VERIFY OTP ======================
+  // ======================================================
 
   const verifyOtp = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!otp || otp.length !== 6) {
-      setError('Please enter the 6-digit OTP');
+
+    setError("");
+    setSuccess("");
+
+    const cleanEmail =
+      email.trim().toLowerCase();
+
+    const cleanOtp =
+      otp.trim();
+
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setError(
+        "Please enter the 6-digit OTP"
+      );
       return;
     }
+
     setLoading(true);
+
     try {
-      await api.post('/otp/verify', {
-        email: email.trim().toLowerCase(),
-        otp: otp.trim(),
+      await api.post("/otp/verify", {
+        email: cleanEmail,
+        otp: cleanOtp,
       });
-      setSuccess('Email verified successfully! You can now log in.');
-      setTimeout(() => navigate('/login'), 2000);
+
+      setSuccess(
+        "Email verified successfully! You can now log in."
+      );
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
-      setError(err.message);
+      setError(
+        err.message || "Invalid OTP"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // ======================================================
+  // ==================== UI ==============================
+  // ======================================================
 
   return (
     <AuthLayout
       title="Verify Email"
-      subtitle={step === 1 ? 'Enter your email to receive OTP' : 'Enter the OTP sent to your email'}
+      subtitle={
+        step === 1
+          ? "Enter your email to receive OTP"
+          : "Enter the OTP sent to your email"
+      }
     >
-      <Alert type="error" message={error} onClose={() => setError('')} />
-      <Alert type="success" message={success} onClose={() => setSuccess('')} />
+      <Alert
+        type="error"
+        message={error}
+        onClose={() => setError("")}
+      />
+
+      <Alert
+        type="success"
+        message={success}
+        onClose={() => setSuccess("")}
+      />
 
       {step === 1 ? (
         <div className="space-y-4">
+
           <Input
             label="Email Address"
             type="email"
@@ -85,18 +172,32 @@ export default function VerifyEmail() {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setError('');
+              setError("");
             }}
+            autoComplete="email"
           />
-          <Button onClick={sendOtp} loading={loading} className="w-full">
+
+          <Button
+            onClick={sendOtp}
+            loading={loading}
+            className="w-full"
+          >
             Send OTP
           </Button>
+
         </div>
       ) : (
-        <form onSubmit={verifyOtp} className="space-y-4">
+        <form
+          onSubmit={verifyOtp}
+          className="space-y-4"
+        >
+
           <div className="text-center mb-2">
             <p className="text-sm text-slate-400">
-              OTP sent to <span className="text-primary-400 font-medium">{email}</span>
+              OTP sent to{" "}
+              <span className="text-primary-400 font-medium">
+                {email}
+              </span>
             </p>
           </div>
 
@@ -106,43 +207,72 @@ export default function VerifyEmail() {
             icon={KeyRound}
             value={otp}
             onChange={(e) => {
-              const v = e.target.value.replace(/\D/g, '').slice(0, 6);
-              setOtp(v);
-              setError('');
+              const value =
+                e.target.value
+                  .replace(/\D/g, "")
+                  .slice(0, 6);
+
+              setOtp(value);
+              setError("");
             }}
             maxLength={6}
+            inputMode="numeric"
+            autoComplete="one-time-code"
             className="text-center tracking-[0.5em] text-lg font-semibold"
           />
 
-          <Button type="submit" loading={loading} className="w-full">
+          <Button
+            type="submit"
+            loading={loading}
+            className="w-full"
+          >
             Verify OTP
           </Button>
 
           <div className="flex items-center justify-between text-sm">
+
             <button
               type="button"
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+                setError("");
+                setSuccess("");
+              }}
               className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
             >
-              <ArrowLeft size={14} /> Change email
+              <ArrowLeft size={14} />
+              Change email
             </button>
+
             <button
               type="button"
               onClick={sendOtp}
-              disabled={countdown > 0 || loading}
+              disabled={
+                countdown > 0 || loading
+              }
               className="text-primary-400 hover:text-primary-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
-              {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
+              {countdown > 0
+                ? `Resend in ${countdown}s`
+                : "Resend OTP"}
             </button>
+
           </div>
+
         </form>
       )}
 
       <p className="text-center text-sm text-slate-400 mt-6">
-        <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
+
+        <Link
+          to="/login"
+          className="text-primary-400 hover:text-primary-300 font-medium"
+        >
           ← Back to Login
         </Link>
+
       </p>
     </AuthLayout>
   );
 }
+

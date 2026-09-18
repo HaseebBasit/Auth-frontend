@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://auth-backend-fv8z.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,19 +12,34 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    console.log('API REQUEST:', config.method?.toUpperCase(), config.baseURL + config.url);
+    console.log(
+      'API REQUEST:',
+      config.method?.toUpperCase(),
+      `${config.baseURL}${config.url}`
+    );
+
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 api.interceptors.response.use(
   (response) => {
-    console.log('API RESPONSE:', response.status, response.data);
+    console.log(
+      'API RESPONSE:',
+      response.status,
+      response.data
+    );
+
     return response;
   },
   (error) => {
-    console.error('API ERROR:', error.response?.data || error.message);
+    console.error(
+      'API ERROR:',
+      error.response?.data || error.message
+    );
 
     const message =
       error.response?.data?.message ||
